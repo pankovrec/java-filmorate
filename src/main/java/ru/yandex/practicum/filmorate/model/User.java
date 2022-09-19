@@ -8,13 +8,15 @@ import java.time.LocalDate;
 @Data
 public class User {
     @NotNull
-    private int userId;
+    @Positive
+    private int id;
     @NotBlank
     @Email
     private String email;
     @NotBlank
+    @Pattern(regexp = "\\S+")
     private String login;
     private String name;
-    @Past
+    @PastOrPresent
     private LocalDate birthday;
 }

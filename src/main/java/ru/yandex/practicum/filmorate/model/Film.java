@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @Valid
 public class Film {
     @NotNull
+    @Positive
     private int id;
     @NotBlank
     @NotNull
@@ -20,5 +21,6 @@ public class Film {
     private String description;
     @PastOrPresent
     private LocalDate releaseDate;
-    private Duration duration;
+    @Min(0)
+    private Integer duration;
 }

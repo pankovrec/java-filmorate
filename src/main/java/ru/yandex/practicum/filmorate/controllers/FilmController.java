@@ -1,13 +1,13 @@
 package ru.yandex.practicum.filmorate.controllers;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.validators.FilmValidator;
 
-import javax.validation.Valid;
 import java.util.*;
 
 @RestController
@@ -15,7 +15,16 @@ import java.util.*;
 @RequestMapping("/films")
 public class FilmController {
     private final Map<Integer, Film> films = new HashMap<>();
-    private int filmId = 0;
+    private Integer filmId;
+
+    private Integer assignId() {
+        if (filmId == null) {
+            filmId = 1;
+        } else {
+            filmId++;
+        }
+        return filmId;
+    }
 
     @GetMapping
     public Collection<Film> getAll() {
@@ -23,8 +32,11 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film addFilm(@Valid @NonNull @RequestBody Film film) throws ValidationException {
-        film.setId(++filmId);
+    public Film addFilm(@RequestBody Film film) {
+        film.setId(assignId());
+        if (films.containsValue(film)) {
+            throw new ValidationException("такой фильм уже добавлялся");
+        }
         FilmValidator.validate(film);
         films.put(film.getId(), film);
         log.info("фильм добавлен", film);
@@ -32,7 +44,10 @@ public class FilmController {
     }
 
     @PutMapping
-    public Film update(@RequestBody @NonNull @Valid Film film) throws ValidationException {
+    public Film update(@RequestBody Film film) {
+        if (!films.containsKey(film.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
         FilmValidator.validate(film);
         films.put(film.getId(), film);
         log.info("фильм обновлен", film);

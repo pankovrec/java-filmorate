@@ -27,7 +27,7 @@ class FilmorateApplicationTests {
         Film film = new Film();
         film.setDescription("Description");
         film.setReleaseDate(LocalDate.of(1990, 02, 01));
-        film.setDuration(Duration.ofMinutes(100));
+        film.setDuration(100);
 
         assertThrows(ValidationException.class, () -> filmController.addFilm(film));
     }
@@ -40,7 +40,7 @@ class FilmorateApplicationTests {
                 " tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud" +
                 " exerci tation ullamcorper suscip");
         film.setReleaseDate(LocalDate.of(2022, 01, 01));
-        film.setDuration(Duration.ofMinutes(120));
+        film.setDuration(120);
 
         assertThrows(ValidationException.class, () -> filmController.addFilm(film));
     }
@@ -51,7 +51,7 @@ class FilmorateApplicationTests {
         film.setName("testIncorrectReleaseDate");
         film.setDescription("test");
         film.setReleaseDate(LocalDate.of(1700, 01, 01));
-        film.setDuration(Duration.ofMinutes(180));
+        film.setDuration(180);
 
 
         assertThrows(ValidationException.class, () -> filmController.addFilm(film));
@@ -63,7 +63,7 @@ class FilmorateApplicationTests {
         film.setName("loo");
         film.setDescription("mee");
         film.setReleaseDate(LocalDate.of(2020, 02, 02));
-        film.setDuration(Duration.ofMinutes(-100));
+        film.setDuration(-100);
 
         assertThrows(ValidationException.class, () -> filmController.addFilm(film));
     }
