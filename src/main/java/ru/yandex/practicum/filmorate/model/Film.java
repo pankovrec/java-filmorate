@@ -4,7 +4,6 @@ import lombok.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.*;
-import java.time.Duration;
 import java.time.LocalDate;
 
 @Data
@@ -12,7 +11,7 @@ import java.time.LocalDate;
 public class Film {
     @NotNull
     @Positive
-    private int id;
+    private long id;
     @NotBlank
     @NotNull
     private String name;

@@ -16,14 +16,11 @@ import java.util.Map;
 @RequestMapping("/users")
 public class UserController {
 
-    private Map<Integer, User> users = new HashMap<>();
-    private Integer userId;
-    private Integer assignId() {
-        if (userId == null) {
-            userId = 1;
-        } else {
-            userId++;
-        }
+    private Map<Long, User> users = new HashMap<>();
+    private Long userId = 0L;
+
+    private Long assignId() {
+        userId++;
         return userId;
     }
 

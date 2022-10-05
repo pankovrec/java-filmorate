@@ -14,15 +14,11 @@ import java.util.*;
 @Slf4j
 @RequestMapping("/films")
 public class FilmController {
-    private final Map<Integer, Film> films = new HashMap<>();
-    private Integer filmId;
+    private final Map<Long, Film> films = new HashMap<>();
+    private Long filmId = 0L;
 
-    private Integer assignId() {
-        if (filmId == null) {
-            filmId = 1;
-        } else {
-            filmId++;
-        }
+    private Long assignId() {
+        filmId++;
         return filmId;
     }
 

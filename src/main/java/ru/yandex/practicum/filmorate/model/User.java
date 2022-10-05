@@ -9,7 +9,7 @@ import java.time.LocalDate;
 public class User {
     @NotNull
     @Positive
-    private int id;
+    private long id;
     @NotBlank
     @Email
     private String email;
