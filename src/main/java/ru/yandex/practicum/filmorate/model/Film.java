@@ -1,16 +1,21 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @Valid
 public class Film {
-    @NotNull
-    @Positive
+    @JsonIgnore
+    private Set<Integer> likes = new HashSet<>();
+    @JsonIgnore
+    private int likesCount;
     private long id;
     @NotBlank
     @NotNull
