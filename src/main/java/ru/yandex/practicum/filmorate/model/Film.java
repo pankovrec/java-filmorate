@@ -13,7 +13,7 @@ import java.util.Set;
 @Valid
 public class Film {
     @JsonIgnore
-    private Set<Integer> likes = new HashSet<>();
+    private Set<Long> likes = new HashSet<>();
     @JsonIgnore
     private int likesCount;
     private long id;

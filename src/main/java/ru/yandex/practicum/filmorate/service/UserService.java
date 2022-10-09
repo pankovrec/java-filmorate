@@ -9,10 +9,10 @@ import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -26,68 +26,67 @@ public class UserService {
     }
 
     public void addFriends(long userId, long friendId) {
-        if (userStorage.getAllUsers().contains(userStorage.getUser(userId))) {
-            if (userStorage.getAllUsers().contains(userStorage.getUser(friendId))) {
-                userStorage.getUser(userId).getFriends().add(friendId);
-                userStorage.getUser(friendId).getFriends().add(userId);
-                log.info("{} и {} подружились",
-                        userStorage.getUser(userId).getName(),
-                        userStorage.getUser(friendId).getName());
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        String.format("нет пользователя с id %d", friendId));
-            }
-        } else {
+        if (!userStorage.getAllUsers().contains(userStorage.getUser(userId))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    String.format("нет пользователя с id %d", friendId));
+        }
+        if (!userStorage.getAllUsers().contains(userStorage.getUser(friendId))) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     String.format("нет пользователя с id %d", userId));
+        } else {
+            userStorage.getUser(userId).getFriends().add(friendId);
+            userStorage.getUser(friendId).getFriends().add(userId);
+            log.info("{} и {} подружились",
+                    userStorage.getUser(userId).getName(),
+                    userStorage.getUser(friendId).getName());
         }
     }
 
     public void deleteFriends(long userId, long friendId) {
-        if (userStorage.getAllUsers().contains(userStorage.getUser(userId))) {
-            if (userStorage.getAllUsers().contains(userStorage.getUser(friendId))) {
-                userStorage.getUser(userId).getFriends().remove(friendId);
-                userStorage.getUser(friendId).getFriends().remove(userId);
-                log.info("{} и {} больше не дружат",
-                        userStorage.getUser(userId).getName(),
-                        userStorage.getUser(friendId).getName());
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        String.format("нет пользователя с id %d", friendId));
-            }
-        } else {
+        if (!userStorage.getAllUsers().contains(userStorage.getUser(userId))) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     String.format("нет пользователя с id %d", userId));
+        }
+        if (!userStorage.getAllUsers().contains(userStorage.getUser(friendId))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    String.format("нет пользователя с id %d", userId));
+        } else {
+            userStorage.getUser(userId).getFriends().remove(friendId);
+            userStorage.getUser(friendId).getFriends().remove(userId);
+            log.info("{} и {} больше не дружат",
+                    userStorage.getUser(userId).getName(),
+                    userStorage.getUser(friendId).getName());
         }
     }
 
     public List<User> getFriends(long userId) {
-        List<User> friends = new ArrayList<>();
-        if (userStorage.getAllUsers().contains(userStorage.getUser(userId))) {
-            if (!userStorage.getUser(userId).getFriends().isEmpty()) {
-                for (long id : userStorage.getUser(userId).getFriends()) {
-                    friends.add(userStorage.getUser(id));
-                }
-                return friends;
-            }
-            return null;
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    String.format("нет пользователя с id %d", userId));
-        }
+        return userStorage.getUser(userId).getFriends().stream()
+                .map(userStorage::getUser)
+                .collect(Collectors.toList());
     }
 
     public Set<User> getCommonFriends(long userId, long friendId) {
-        User user = userStorage.getUser(userId);
-        User friend = userStorage.getUser(friendId);
-        Set<User> commonFriends = new HashSet<>();
+        return userStorage.getUser(userId).getFriends().stream()
+                .filter(u -> userStorage.getUser(friendId).getFriends().contains(u))
+                .map(userStorage::getUser)
+                .collect(Collectors.toSet());
+    }
 
-        for (long userFriendId : user.getFriends()) {
-            if (friend.getFriends().contains(userFriendId)) {
-                User commonFriend = userStorage.getUser(userFriendId);
-                commonFriends.add(commonFriend);
-            }
-        }
-        return commonFriends;
+    public User addUser(User user) {
+        userStorage.addUser(user);
+        return user;
+    }
+
+    public User updateUser(User user) {
+        userStorage.updateUser(user);
+        return user;
+    }
+
+    public User getUser(long id) {
+        return userStorage.getUser(id);
+    }
+
+    public Collection<User> getAllUsers() {
+        return userStorage.getAllUsers();
     }
 }
