@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.validators;
 
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.time.LocalDate;
 
@@ -21,6 +22,9 @@ public class FilmValidator {
 
         if (film.getDuration() < 0) {
             throw new ValidationException("duration: должна быть положительной");
+        }
+        if (film.getMpa() == null) {
+            throw new ValidationException("Не прошла валидация MPA");
         }
     }
 }

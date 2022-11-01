@@ -1,120 +1,119 @@
 package ru.yandex.practicum.filmorate;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.controllers.*;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.impl.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.impl.UserDbStorage;
 
-import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
+@AutoConfigureTestDatabase
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmorateApplicationTests {
-    @Autowired
-    private FilmController filmController;
-    @Autowired
-
-    private UserController userController;
+    private final UserDbStorage userStorage;
+    private final FilmDbStorage filmStorage;
+    private User userTest = new User(
+            1L,
+            "mo@mu.ru",
+            "login",
+            "name1",
+            LocalDate.of(2002, 02, 04)
+    );
+    private User userTestUpdated = new User(
+            1L,
+            "mo@ma.ru",
+            "loginUPD",
+            "name1UPD",
+            LocalDate.of(2004, 04, 04)
+    );
 
     @Test
-    public void testAddFilmWithEmptyName() {
+    public void testCreateUser() {
 
-        Film film = new Film();
-        film.setDescription("Description");
-        film.setReleaseDate(LocalDate.of(1990, 02, 01));
-        film.setDuration(100);
+        Optional<User> userOptional = Optional.ofNullable(userStorage.addUser(userTest));
 
-        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
+        assertThat(userOptional)
+                .isPresent()
+                .hasValueSatisfying(user ->
+                        assertThat(user).hasFieldOrPropertyWithValue("id", 2L)
+                );
     }
 
     @Test
-    public void testAddFilmWithVeryBigDescription() {
-        Film film = new Film();
-        film.setName("testover200chardesc");
-        film.setDescription("Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod" +
-                " tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud" +
-                " exerci tation ullamcorper suscip");
-        film.setReleaseDate(LocalDate.of(2022, 01, 01));
-        film.setDuration(120);
+    public void testFindUserById() {
 
-        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
+        Optional<User> userOptional = Optional.ofNullable(userStorage.getUser(1L));
+
+        assertThat(userOptional)
+                .isPresent()
+                .hasValueSatisfying(user ->
+                        assertThat(user).hasFieldOrPropertyWithValue("id", 1L)
+                );
     }
 
     @Test
-    public void testAddFilmWithIncorrectReleaseDate() {
-        Film film = new Film();
-        film.setName("testIncorrectReleaseDate");
-        film.setDescription("test");
-        film.setReleaseDate(LocalDate.of(1700, 01, 01));
-        film.setDuration(180);
+    public void testUpdateUser() {
+        userStorage.addUser(userTest);
+        userStorage.updateUser(userTestUpdated);
+        Optional<User> userOptional = Optional.ofNullable(userStorage.updateUser(userTestUpdated));
+
+        assertThat(userOptional)
+                .isPresent()
+                .hasValueSatisfying(user ->
+                        assertThat(user).hasFieldOrPropertyWithValue("email", "mo@ma.ru")
+                );
+    }
+
+    private Film FilmTest = new Film(
+            1L,
+            "test1",
+            "descr",
+            LocalDate.of(2002, 02, 04), 100);
 
 
-        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
+    private Film FilmTestUpdated = new Film(
+            2L,
+            "f1UPD",
+            "descrUPD",
+            LocalDate.of(2004, 06, 04), 150);
+
+    @Test
+    public void testAddFilm() {
+        FilmTest.setMpa(new Mpa(2, "PG"));
+        filmStorage.addFilm(FilmTest);
+        Optional<Film> userOptional = Optional.ofNullable(filmStorage.addFilm(FilmTest));
+
+        assertThat(userOptional)
+                .isPresent()
+                .hasValueSatisfying(film ->
+                        assertThat(film).hasFieldOrPropertyWithValue("id", 2L)
+                );
     }
 
     @Test
-    public void testAddFilmWithNegativeDuration() {
-        Film film = new Film();
-        film.setName("loo");
-        film.setDescription("mee");
-        film.setReleaseDate(LocalDate.of(2020, 02, 02));
-        film.setDuration(-100);
+    public void testUpdateFilm() {
+        FilmTest.setMpa(new Mpa(2, "PG"));
 
-        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
-    }
+        filmStorage.addFilm(FilmTest);
+        FilmTestUpdated.setMpa(new Mpa(2, "PG"));
 
-    @Test
-    public void testAddUserWithIncorrectMail() {
-        User user = new User();
-        user.setName("user1");
-        user.setEmail("test.ur");
-        user.setBirthday(LocalDate.of(2020, 02, 01));
-        user.setLogin("login1");
-        assertThrows(ValidationException.class, () -> userController.addUser(user));
-    }
+        filmStorage.updateFilm(FilmTestUpdated);
+        Optional<Film> filmOptional = Optional.ofNullable(filmStorage.updateFilm(FilmTestUpdated));
 
-    @Test
-    public void testAddUserWithSpaceInLogin() {
-        User user = new User();
-        user.setName("userwithoutlogin");
-        user.setEmail("4@mail.com");
-        user.setLogin("");
-        user.setBirthday(LocalDate.of(2022, 02, 01));
-        assertThrows(ValidationException.class, () -> userController.addUser(user));
-    }
-
-    @Test
-    public void testAddUserWithSpacesInLogin() {
-        User user = new User();
-        user.setName("name12");
-        user.setEmail("we@a.test");
-        user.setBirthday(LocalDate.of(2022, 01, 01));
-        user.setLogin("oneword twoword");
-
-        assertThrows(ValidationException.class, () -> userController.addUser(user));
-    }
-
-    @Test
-    public void testAddUserWithoutName() throws ValidationException {
-        User user = new User();
-        user.setEmail("test@test.te");
-        user.setBirthday(LocalDate.of(2012, 02, 12));
-        user.setLogin("loginnn");
-        userController.addUser(user);
-        assertEquals(user.getName(), user.getLogin());
-    }
-
-    @Test
-    public void testAddUserWithIncorrectBDay() {
-        User user = new User();
-        user.setEmail("ter@mail.re");
-        user.setBirthday(LocalDate.of(2100, 12, 12));
-        user.setLogin("logiinn");
-        assertThrows(ValidationException.class, () -> userController.addUser(user));
+        assertThat(filmOptional)
+                .isPresent()
+                .hasValueSatisfying(user ->
+                        assertThat(user).hasFieldOrPropertyWithValue("name", "f1UPD")
+                );
     }
 }

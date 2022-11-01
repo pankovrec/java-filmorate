@@ -7,9 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.validators.UserValidator;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -57,4 +55,26 @@ public class InMemoryUserStorage implements UserStorage {
                     String.format("Пользователь с id %d не найден", id));
         }
     }
+
+    @Override
+    public void addFriend(long userId, long friendId) {
+
+    }
+
+    @Override
+    public void removeFriend(long userId, long friendId) {
+
+    }
+
+    @Override
+    public List<User> getAllFriends(long id) {
+        return null;
+    }
+
+    @Override
+    public List<User> getCommonFriends(long userId, long friendId) {
+        return null;
+    }
+
+
 }
