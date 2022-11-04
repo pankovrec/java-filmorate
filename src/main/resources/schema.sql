@@ -9,7 +9,7 @@ create table if not exists genres
 create table if not exists mpa_rating
 (
     mpa_id int primary key,
-    name   varchar(5)
+    mpa_name   varchar(5)
 );
 
 create table if not exists users

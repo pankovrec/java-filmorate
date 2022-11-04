@@ -21,25 +21,23 @@ public class MpaDbStorage implements MpaStorage {
 
     @Override
     public List<Mpa> getAllMpa() {
-        return jdbcTemplate.query("SELECT * FROM mpa_rating", (rs, rowNum) -> new Mpa(
+        return jdbcTemplate.query("SELECT * FROM MPA_RATING", (rs, rowNum) -> new Mpa(
                 rs.getInt("mpa_id"),
-                rs.getString("name"))
-        );
+                rs.getString("mpa_name")));
     }
 
     @Override
     public Mpa getMpa(int id) {
-        SqlRowSet mpaRow = jdbcTemplate.queryForRowSet("SELECT * FROM MPA_RATING WHERE mpa_id=?", id);
+        SqlRowSet mpaRow = jdbcTemplate.queryForRowSet("SELECT * FROM MPA_RATING WHERE MPA_ID=?", id);
         if (mpaRow.next()) {
             Mpa mpa = new Mpa(
                     mpaRow.getInt("mpa_id"),
-                    mpaRow.getString("name"));
+                    mpaRow.getString("mpa_name"));
             return mpa;
         } else {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    String.format("Рейтинг %d не найден", id)
-            );
+                    String.format("Рейтинг %d не найден", id));
         }
     }
 }

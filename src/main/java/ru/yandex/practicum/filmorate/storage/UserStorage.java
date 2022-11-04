@@ -4,7 +4,6 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Интерфейс user storage.
@@ -41,12 +40,7 @@ public interface UserStorage {
      */
     User getUser(long id);
 
-    void addFriend(long userId, long friendId);
-
-    void removeFriend(long userId, long friendId);
-
     List<User> getAllFriends(long id);
 
     List<User> getCommonFriends(long userId, long friendId);
-
 }

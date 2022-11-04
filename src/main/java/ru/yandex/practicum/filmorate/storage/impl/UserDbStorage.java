@@ -12,12 +12,10 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.filmorate.validators.UserValidator;
 
-import javax.validation.Valid;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-
 
 @Slf4j
 @Component("UserDbStorage")
@@ -30,8 +28,6 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    @Valid
-
     public User addUser(User user) {
         UserValidator.validate(user);
         Map<String, Object> keys = new SimpleJdbcInsert(this.jdbcTemplate)
@@ -95,17 +91,6 @@ public class UserDbStorage implements UserStorage {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     String.format("Пользователь с id %d не найден", id));
         }
-    }
-
-    @Override
-    public void addFriend(long userId, long friendId) {
-        jdbcTemplate.update("MERGE INTO friends KEY(user_id, friend_id, status) VALUES (?, ?, ?)",
-                userId, friendId, 1);
-    }
-
-    @Override
-    public void removeFriend(long userId, long friendId) {
-        jdbcTemplate.update("DELETE FROM friends WHERE user_id=? AND friend_id=?", userId, friendId);
     }
 
     @Override

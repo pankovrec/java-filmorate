@@ -1,17 +1,17 @@
 package ru.yandex.practicum.filmorate.storage.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exceptions.FilmNotFoundException;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.GenreStorage;
-import ru.yandex.practicum.filmorate.storage.MpaStorage;
 import ru.yandex.practicum.filmorate.validators.FilmValidator;
 
 import java.sql.Date;
@@ -24,13 +24,9 @@ import java.util.*;
 public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
-    private final GenreStorage genreStorage;
-    private final MpaStorage mpaStorage;
 
-    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage, MpaStorage mpaStorage) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.genreStorage = genreStorage;
-        this.mpaStorage = mpaStorage;
     }
 
     @Override
@@ -71,36 +67,40 @@ public class FilmDbStorage implements FilmStorage {
             removeGenresFromFilm(film.getId());
             addGenresToFilm(film.getId(), film.getGenres());
         }
-        return film;
+        return getFilm(film.getId());
     }
 
     @Override
     public Film getFilm(long id) {
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet("SELECT * FROM FILMS WHERE film_id = ?", id);
+
+        SqlRowSet userRows = jdbcTemplate.queryForRowSet("SELECT * FROM FILMS as f " +
+                "LEFT JOIN MPA_RATING on f.mpa_id = mpa_rating.mpa_id WHERE film_id = ?", id);
         if (userRows.next()) {
             Film film = new Film(
                     userRows.getLong("film_id"),
                     userRows.getString("name"),
                     userRows.getString("description"),
                     userRows.getDate("releaseDate").toLocalDate(),
-                    userRows.getInt("duration")
-            );
-            int mpa = userRows.getInt("mpa_id");
-            film.setMpa(mpaStorage.getMpa(mpa));
+                    userRows.getInt("duration"));
 
+            int mpa = userRows.getInt("mpa_id");
+            String mpaName = userRows.getString("mpa_name");
+            film.setMpa(new Mpa(mpa, mpaName));
             Set<Genre> genres = getFilmGenres(id);
             if (genres.size() != 0) {
                 film.setGenres(getFilmGenres(id));
             }
             return film;
         } else {
-            throw new FilmNotFoundException("Фильм с ID=" + getFilm(id) + " не найден!");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    String.format("Фильм с id %d не найден", id));
         }
     }
 
     public List<Film> getAllFilms() {
         List<Film> allFilms = new ArrayList<>();
-        SqlRowSet filmsRows = jdbcTemplate.queryForRowSet("SELECT * FROM films");
+        SqlRowSet filmsRows = jdbcTemplate.queryForRowSet("SELECT * FROM FILMS " +
+                "LEFT JOIN MPA_RATING on films.mpa_id = mpa_rating.mpa_id");
 
         while (filmsRows.next()) {
             Film film = new Film(filmsRows.getInt("film_id"),
@@ -108,20 +108,20 @@ public class FilmDbStorage implements FilmStorage {
                     filmsRows.getString("description"),
                     filmsRows.getDate("releasedate").toLocalDate(),
                     filmsRows.getInt("duration"));
-            film.setMpa(
-                    mpaStorage.getMpa(
-                            filmsRows.getInt("mpa_id")));
+
+            int mpa = filmsRows.getInt("mpa_id");
+            String mpaName = filmsRows.getString("mpa_name");
+            film.setMpa(new Mpa(mpa, mpaName));
             film.setGenres(
                     getFilmGenres(film.getId())
             );
-
             allFilms.add(film);
         }
         return allFilms;
     }
 
     @Override
-    public void addGenresToFilm(long filmId, TreeSet<Genre> genres) {
+    public void addGenresToFilm(long filmId, Set<Genre> genres) {
         for (Genre genre : genres) {
             jdbcTemplate.update("INSERT INTO FILMS_GENRE (film_id, genre_id) VALUES (?,?)", filmId, genre.getId());
         }
@@ -133,13 +133,13 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public TreeSet<Genre> getFilmGenres(Long filmId) {
+    public Set<Genre> getFilmGenres(Long filmId) {
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet("SELECT GENRES.GENRE_ID, NAME " +
                 "FROM FILMS_GENRE " +
                 "JOIN GENRES ON FILMS_GENRE.GENRE_ID = GENRES.GENRE_ID " +
                 "WHERE FILMS_GENRE.FILM_ID=?", filmId);
 
-        TreeSet<Genre> genres = new TreeSet<>();
+        Set<Genre> genres = new TreeSet<>();
 
         while (sqlRowSet.next()) {
             genres.add(new Genre(sqlRowSet.getInt("genre_id"),
@@ -148,26 +148,15 @@ public class FilmDbStorage implements FilmStorage {
         return genres;
     }
 
-    @Override
-    public void addLike(long filmId, long userId) {
-        String sql = "MERGE INTO likes KEY(film_id, user_id) VALUES (?, ?);";
-        jdbcTemplate.update(sql, filmId, userId);
-    }
-
-    @Override
-    public void deleteLike(long filmId, long userId) {
-        jdbcTemplate.update("DELETE FROM likes WHERE film_id = ? AND user_id = ?;", filmId, userId);
-    }
 
     public List<Film> getPopularFilms(int count) {
         List<Film> popularFilms = new ArrayList<>();
         SqlRowSet filmsRows = jdbcTemplate.queryForRowSet
-                ("SELECT FILMS.FILM_ID,NAME,DESCRIPTION,RELEASEDATE,DURATION, MPA_ID, COUNT(LIKES.user_id) " +
-                        "FROM FILMS " +
-                        "LEFT JOIN likes ON FILMS.FILM_ID = LIKES.FILM_ID " +
-                        "GROUP BY films.FILM_ID " +
-                        "ORDER BY count(LIKES.USER_ID) DESC " +
-                        "LIMIT ?", count);
+                ("SELECT F.FILM_ID, F.NAME, F.DESCRIPTION, F.RELEASEDATE, F.DURATION, " +
+                        "F.MPA_ID, COUNT(LIKES.USER_ID), MPA_NAME " +
+                        "FROM FILMS AS F LEFT JOIN LIKES ON F.FILM_ID = LIKES.FILM_ID " +
+                        "JOIN MPA_RATING ON F.MPA_ID = MPA_RATING.MPA_ID " +
+                        "GROUP BY F.FILM_ID ORDER BY COUNT(LIKES.USER_ID) DESC LIMIT ?", count);
 
         while (filmsRows.next()) {
             Film film = new Film(filmsRows.getInt("film_id"),
@@ -175,9 +164,10 @@ public class FilmDbStorage implements FilmStorage {
                     filmsRows.getString("description"),
                     filmsRows.getDate("releaseDate").toLocalDate(),
                     filmsRows.getInt("duration"));
-            film.setMpa(
-                    mpaStorage.getMpa(
-                            filmsRows.getInt("mpa_id")));
+            int mpa = filmsRows.getInt("mpa_id");
+            String mpaName = filmsRows.getString("mpa_name");
+
+            film.setMpa(new Mpa(mpa, mpaName));
             film.setGenres(
                     getFilmGenres(film.getId())
             );

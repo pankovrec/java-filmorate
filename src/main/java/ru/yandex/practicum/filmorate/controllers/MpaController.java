@@ -27,5 +27,4 @@ public class MpaController {
     public Mpa getMpa(@PathVariable int id) {
         return mpaService.getMpa(id);
     }
-
 }

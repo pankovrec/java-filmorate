@@ -12,8 +12,7 @@ import java.util.List;
 
 @Component
 public class GenreDbStorage implements GenreStorage {
-    private static final String GENRES_SELECT_ALL = "SELECT * FROM GENRES";
-    private static final String GENRE_SELECT = "SELECT * FROM GENRES WHERE genre_id = ?";
+
     private final JdbcTemplate jdbcTemplate;
 
     public GenreDbStorage(JdbcTemplate jdbcTemplate) {
@@ -22,15 +21,13 @@ public class GenreDbStorage implements GenreStorage {
 
     @Override
     public List<Genre> getAllGenre() {
-        return jdbcTemplate.query(GENRES_SELECT_ALL, (rs, rowNum) -> new Genre(
+        return jdbcTemplate.query("SELECT * FROM GENRES", (rs, rowNum) -> new Genre(
                 rs.getInt("genre_id"),
-                rs.getString("name"))
-        );
+                rs.getString("name")));
     }
 
-    @Override
     public Genre getGenre(int id) {
-        SqlRowSet genreRows = jdbcTemplate.queryForRowSet(GENRE_SELECT, id);
+        SqlRowSet genreRows = jdbcTemplate.queryForRowSet("SELECT * FROM GENRES WHERE genre_id = ?", id);
         if (genreRows.next()) {
             Genre genre = new Genre(
                     genreRows.getInt("genre_id"),
@@ -40,9 +37,7 @@ public class GenreDbStorage implements GenreStorage {
         } else {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    String.format("Жанр с id %d не найден", id)
-            );
+                    String.format("Жанр с id %d не найден", id));
         }
-
     }
 }
