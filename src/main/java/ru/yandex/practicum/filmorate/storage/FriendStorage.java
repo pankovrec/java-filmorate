@@ -7,5 +7,4 @@ public interface FriendStorage {
     void addFriend(Friend friend);
 
     void removeFriend(Friend friend);
-
 }

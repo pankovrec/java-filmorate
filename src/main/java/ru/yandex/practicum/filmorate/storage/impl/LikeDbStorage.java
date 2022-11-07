@@ -14,12 +14,12 @@ public class LikeDbStorage implements LikeStorage {
     @Override
     public void addLike(Like like) {
         jdbcTemplate.update("MERGE INTO likes KEY(film_id, user_id) VALUES (?, ?);",
-                like.getFilm_id(), like.getUser_id());
+                like.getFilmId(), like.getUserId());
     }
 
     @Override
     public void deleteLike(Like like) {
         jdbcTemplate.update("DELETE FROM likes WHERE film_id = ? AND user_id = ?;",
-                like.getFilm_id(), like.getUser_id());
+                like.getFilmId(), like.getUserId());
     }
 }

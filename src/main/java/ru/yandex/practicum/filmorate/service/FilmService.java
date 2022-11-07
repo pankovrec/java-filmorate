@@ -40,8 +40,8 @@ public class FilmService {
         filmAndUserExistValid(filmId, userId);
         likeStorage.addLike(Like
                 .builder()
-                .film_id(filmId)
-                .user_id(userId)
+                .filmId(filmId)
+                .userId(userId)
                 .build());
     }
 
@@ -49,8 +49,8 @@ public class FilmService {
         filmAndUserExistValid(filmId, userId);
         likeStorage.deleteLike(Like
                 .builder()
-                .film_id(filmId)
-                .user_id(userId)
+                .filmId(filmId)
+                .userId(userId)
                 .build());
     }
 
