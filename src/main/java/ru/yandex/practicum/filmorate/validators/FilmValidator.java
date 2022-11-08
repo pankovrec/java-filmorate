@@ -22,5 +22,8 @@ public class FilmValidator {
         if (film.getDuration() < 0) {
             throw new ValidationException("duration: должна быть положительной");
         }
+        if (film.getMpa() == null) {
+            throw new ValidationException("Не прошла валидация MPA");
+        }
     }
 }
